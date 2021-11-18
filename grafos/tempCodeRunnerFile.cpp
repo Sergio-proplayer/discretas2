@@ -1,0 +1,6 @@
+
+    {
+        insertarVertice(letraAscii(i));
+        i++;
+    }
+

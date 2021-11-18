@@ -1,0 +1,14 @@
+graph A {
+node[shape = record];
+3[label = "<f0> | <f1>3 |<f2> "];
+3:f0:sw -- 1:f1;
+1[label = "<f0> | <f1>1 |<f2> "];
+3:f2:se -- 9:f1;
+9[label = "<f0> | <f1>9 |<f2> "];
+9:f0:sw -- 7:f1;
+7[label = "<f0> | <f1>7 |<f2> "];
+7:f0:sw -- 5:f1;
+5[label = "<f0> | <f1>5 |<f2> "];
+9:f2:se -- 12:f1;
+12[label = "<f0> | <f1>12 |<f2> "];
+}

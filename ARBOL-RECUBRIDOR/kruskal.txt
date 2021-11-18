@@ -1,0 +1,7 @@
+graph A {
+ rankdir = "LR"; 
+ 	A -- B[ label = "6"];
+	B -- C[ label = "2"];
+	B -- E[ label = "4"];
+	D -- E[ label = "5"];
+}

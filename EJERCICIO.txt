@@ -1,0 +1,7 @@
+Crear una matriz cuadrada y mediante un Menú realizar las siguientes opciones:
+a) Leer Datos.
+b) Modificar Datos.
+c) Mostrar Datos.
+d) Mostrar la suma de la diagonal principal.
+e) Mostrar la suma de la diagonal secundaria.
+f) Salir

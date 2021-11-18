@@ -1,0 +1,621 @@
+#include<iostream>
+#include<stdlib.h>
+#include<fstream>
+using namespace std;
+
+
+// datos a cambiar de ser necesario
+const char *direccion = "cd UNSA 2DO SEMESTRE\\ESTRUCTURAS DISCRETAS II\\ArchivosCPP\\grafos";
+const string archivoMatriz = "matriz.txt";
+
+// matriz dinamica para guardar datos en caso de leer un archivp
+int **puntero_matriz;
+
+// las estructuras para la arita y el vertice
+struct Arista;
+
+struct Vertice{
+    char nombre;
+    Vertice *sig;
+    Arista *ady;
+};
+
+struct Arista{
+    Vertice *dest;
+    Arista *sig;
+};
+
+// el vertice principal o el primero, al que llamaremos grafo
+Vertice *grafo = NULL;
+
+// prototipos de funciones
+void menu();
+bool existeVertice(char);
+bool existeArista(Vertice *, char, char);
+void insertarVertice(char);
+void agregarArista(Vertice *&, Vertice *&, Arista *&);
+void insertarArista(char, char);
+Vertice *getVertice(char);
+char letraAscii(int);
+int numeroAscii(char);
+void eliminarVertice(Vertice *&, char );
+void eliminarArista(Vertice *&, char);
+void eliminarGrafo(Vertice *&, char &);
+string instruccionesGrafo();
+void graficarGrafo();
+void abrirPdf();
+int funcionInternos(int);
+void datosMatriz(string, int &, int &);
+void cargarMatriz(string, int, int);
+void mostrarMatriz(int, int);
+void porColumna(int, int);
+void grafoFichero(string, int, int);
+
+int main()
+{
+    char nombre, orig, dest, opc, sn;
+    int n, i = 65, k = 65, fi, co;
+
+    do
+    {
+        menu();
+        cout<<"Digite una opcion ";cin>>opc;
+        switch (opc)
+        {
+            case '1': { // Insertar Vertice
+                // guardamos el nombre del nuevo vertice
+                cout<<"Ingrese una letra: ";cin>>nombre;
+                nombre = toupper(nombre);
+                // si ya existe entonces no lo reescribimos
+                if(existeVertice(nombre))
+                    cout<<nombre<<" ya existe en el grafo"<<endl;
+                // si no existe los agregamos
+                else
+                {
+                    insertarVertice(nombre);
+                    // estos son los indicadores del abecedario en mayusculas
+                    i = numeroAscii(nombre)+1;
+                    k = numeroAscii(nombre)+1;
+                }
+                system("pause");
+            }break;
+            case '2': { // Insertar Arista
+                cout<<"Ingrese el origen: ";cin>>orig;
+                cout<<"Ingrese el destino: ";cin>>dest;
+                orig = toupper(orig);
+                dest = toupper(dest);
+                // Si los dos vertices existen insertamos la arista
+                if(existeVertice(orig)&&existeVertice(dest))
+                    insertarArista(orig,dest);
+                else
+                {
+                    if(!existeVertice(orig))
+                        cout<<orig<<" no existe en el grafo"<<endl;
+                    if(!existeVertice(dest))
+                        cout<<dest<<" no existe en el grafo"<<endl;
+                }
+                system("pause");
+            }break;
+            case '3': { // Insertar n vertices
+                cout<<"Numero de vertices: ";
+                cin>>n;
+                // tomamos el numero de vertices, y con los indicadores insetamos letras
+                while(i < n + k)
+                {
+                    insertarVertice(letraAscii(i));
+                    i++;
+                }
+                k = i;
+                system("pause");
+            }break;
+            case '4': { // Cargar el archivo
+                // Para cargar el archivo se necesita que el grafo este vacio, sino habra errores
+                if(!(grafo == NULL))
+                {
+                    cout<<"Para cargar el archivo se necesita eliminar el grafo actual\nDesea hacerlo? s/n: ";
+                    cin>>sn; sn = toupper(sn);
+                }
+                else
+                    sn = 'S';
+
+                if(sn == 'S')
+                { 
+                    // eliminamos el grafo
+                    while(grafo != NULL)
+                        eliminarGrafo(grafo,nombre);
+
+                    // leemos la matriz
+                    datosMatriz(archivoMatriz,fi,co);
+                    cout<<endl;
+                    // y creamos un grafo a partir de los datos de la matriz
+                    grafoFichero(archivoMatriz,fi,co);
+                }
+                system("pause");
+            }break;
+            case '5': { // eliminar vertice
+                cout<<"Vertice a eliminar: ";cin>>nombre;
+                nombre = toupper(nombre);
+                Vertice *aux = grafo;
+                while(aux != NULL)
+                {   // eliminamos todas las aristas ancladas a este vertice
+                    if(existeArista(grafo,aux->nombre,nombre))
+                        eliminarArista(aux,nombre);
+                    aux = aux->sig;
+                }
+                // eliminamos el vertice en si
+                eliminarVertice(grafo,nombre);
+                cout<<nombre<<" fue eliminado del grafo"<<endl;
+                system("pause");
+            }break;
+            case '6': { // eliminar arista
+                cout<<"Origen: ";cin>>orig;
+                cout<<"Destino: ";cin>>dest;
+                orig = toupper(orig);
+                dest = toupper(dest);
+
+
+                Vertice *auxOrig = getVertice(orig);
+                // si exista la arista, lo eliminamos
+                if(existeArista(grafo,orig,dest))
+                    eliminarArista(auxOrig,dest);
+                else
+                    cout<<"No existe la arista"<<endl;
+                system("pause");
+            }break;
+            case '7': { // eliminar todo el grafo
+                cout<<"Se procedera a eliminar todo el grafo\n Esta seguro? s/n: ";
+                cin>>sn; sn = toupper(sn);
+                if(sn == 'S')
+                {
+                    while(grafo != NULL)
+                        eliminarGrafo(grafo,nombre);
+                    i = 65;
+                    k = 65;
+                }
+                cout<<"El grafo fue eliminado correctamente"<<endl;
+                system("pause");
+            }break;
+            case '8': { // graficar, mostrarlo en el pdf
+                graficarGrafo();
+                abrirPdf();
+            }break;
+            case '9': {
+                cout<<"Saliendo...";
+                system("pause");
+            }break;
+            default: {
+                cout<<"No es una opcion"<<endl;
+                system("pause");
+            }break;
+        }
+        system("cls");
+    } while (opc != '9');
+
+    for(int i=0;i<fi;i++)
+	{
+		delete [] puntero_matriz[i];
+	}
+	delete [] puntero_matriz;
+    return 0;
+}
+
+void menu()
+{
+    cout<<"1. Insertar Vertice"<<endl;
+    cout<<"2. Insertar Arista"<<endl;
+    cout<<"3. Agregar n vertices"<<endl;
+    cout<<"4. Cargar archivo"<<endl;
+    cout<<"5. Eliminar Vertice"<<endl;
+    cout<<"6. Eliminar arista"<<endl;
+    cout<<"7. Eliminar Grafo"<<endl;
+    cout<<"8. Mostrar Grafo"<<endl;
+    cout<<"9. Salir"<<endl;
+}
+
+bool existeVertice(char nombre)
+{
+    Vertice *vert, *aux = grafo;
+    // recorremos el grafo hasta que este sea null
+    while(aux != NULL)
+    {
+        // si encontramos el vertice, retornamos verdadero
+        if(aux->nombre == nombre)
+            return true;
+        aux = aux->sig;
+    }
+    return false;
+}
+
+bool existeArista(Vertice *grafo, char orig, char dest)
+{   
+    Vertice *aux = grafo;
+    Arista *ari;
+    while(aux != NULL)
+    {   
+        // recorremos el grafo has el vertice origen
+        if(aux->nombre == orig)
+        {
+            ari = aux->ady;
+            while(ari != NULL)
+            {
+                // si tienen una arista con el destino correspondiente es true
+                if(ari->dest->nombre == dest)
+                    return true;
+                ari = ari->sig;
+            }
+        }   
+        aux = aux->sig;
+    }
+    return false;
+
+}
+
+void insertarVertice(char nombre)
+{
+    // creamos un nuevo vertice
+    Vertice *aux,*nuevo = new Vertice();
+    nuevo->nombre = nombre;
+    nuevo->sig = NULL;
+    nuevo->ady = NULL;
+
+    // si el grafo es null, el vertice es el grafo
+    if(grafo == NULL)
+        grafo = nuevo;
+    else{
+        aux = grafo;
+        // si no lo insertamos al inicio
+        while(aux->sig != NULL)
+            aux = aux->sig;
+        aux->sig = nuevo;
+    }
+    cout<<nuevo->nombre<<" Ingresado al grafo "<<endl;
+
+}
+
+void agregarArista(Vertice *&aux1, Vertice *&aux2, Arista *&nueva_arista)
+{
+    // creamos una nueva arista
+    Arista *ari;
+    // si el origen no tiene arista, entonce lo agregamos hacia el aux2
+    if(aux1->ady == NULL)
+    {
+        aux1->ady = nueva_arista;
+        nueva_arista->dest = aux2;
+    }
+    else{
+        ari = aux1->ady;
+        // sino insertamos la arista al final de la lista de aristas
+        while(ari->sig != NULL)
+            ari = ari->sig;
+        nueva_arista->dest = aux2;
+        ari->sig = nueva_arista;
+    }
+
+}
+
+void insertarArista(char orig, char dest)
+{
+    Arista *nueva_arista = new Arista();
+    Vertice *aux1, *aux2;
+
+    // si el grafo es null, no hay donde insertar aritas
+    if(grafo == NULL)
+    {
+        cout<<"No hay grafo"<<endl;
+        return;
+    }
+    nueva_arista->sig = NULL;
+    aux1 = grafo;
+    aux2 = grafo;
+
+    // recorremos el grafo hasta tomar el valor de destino
+    while(aux2 != NULL)
+    {
+        if(aux2->nombre == dest)
+            break;
+        aux2 = aux2->sig;
+    }
+    while(aux1 != NULL)
+    {
+        if(aux1->nombre == orig)
+        {
+            // si llegamos al origen, cremos la arista de origen a destino
+            agregarArista(aux1,aux2,nueva_arista);
+            return;
+        }
+        aux1 = aux1->sig;
+    }
+
+}
+
+Vertice *getVertice(char nombre)
+{
+    Vertice *vert, *aux = grafo;
+    while(aux != NULL)
+    {
+        // recorremos hasta que el aux tome el valor que queremos
+        if(aux->nombre == nombre)
+            vert = aux;
+        aux = aux->sig;
+    }
+    // retornamos el vertice
+    return vert;
+}
+
+// damos un numero y lo devuelve en caracter
+char letraAscii(int num)
+{
+    char letra = num;
+    return letra;
+}
+
+// damos un caracter y lo devuelve en numero
+int numeroAscii(char letra)
+{
+    int num = letra;
+    return num;
+}
+
+void eliminarVertice(Vertice *&grafo, char n)
+{
+    // si el grafo no esta vacio
+    if(grafo != NULL)
+    {
+        Vertice *aux_borrar;
+        Vertice *anterior = NULL;
+
+        // aux borrar señalara el primer valor del grafo
+        aux_borrar = grafo;
+
+        // recorrer el grafo
+        while((aux_borrar != NULL)&&(aux_borrar->nombre != n))
+        {
+            anterior = aux_borrar;
+            aux_borrar = aux_borrar->sig;
+        }
+
+        // el vertice no fue encontrado
+        if(aux_borrar == NULL)
+            cout<<"El elemento no ha sido encontrado"<<endl;
+        
+        // el primer vertice es el que vamos a eliminar
+        else if(anterior == NULL)
+        {
+            grafo = grafo->sig;
+            delete aux_borrar;
+        }
+
+        // si el vertice a borrar no es el primero
+        else
+        {
+            anterior->sig = aux_borrar->sig;
+            delete aux_borrar;
+        }
+    }
+}
+
+void eliminarArista(Vertice *&orig, char dest)
+{
+    
+    // la arita a borrar que toma el valor ady a origen
+    Arista *borrar = orig->ady, *anterior = NULL;
+
+    // recorremos el grafo
+    while((borrar != NULL)&&(borrar->dest->nombre != dest))
+    {
+        anterior = borrar;
+        borrar = borrar->sig;
+    }
+    
+    if(borrar == NULL)
+        cout<<"Elemento no encontrado"<<endl;
+
+    // la arista es la primera de la lista de aristas del origen
+    else if(anterior == NULL)
+    {
+        orig->ady = orig->ady->sig;
+        delete borrar; 
+    }
+
+    else
+    {
+        anterior->sig = borrar->sig;
+        delete borrar;
+    }
+}
+
+// recorremos todo el grafo y vamos eliminando
+void eliminarGrafo(Vertice *&grafo, char &n)
+{
+    Vertice *aux = grafo;
+    n = aux->nombre;
+    grafo = aux->sig;
+    delete aux;
+}
+
+// graficar el grafo con graphviz
+string instruccionGrafo()
+{
+    Vertice *punt;
+    Arista *ari;
+    punt = grafo;
+
+    string texto;
+
+    while(punt != NULL)
+    {
+        // si el vertice tiene aristas
+        if(punt->ady != NULL)
+        {
+            // recorremos todas las aristas
+            ari = punt->ady;
+            while(ari != NULL)
+            {
+                texto += "\t";
+                texto += punt->nombre;
+                texto += " -- ";
+                texto += ari->dest->nombre;
+                texto += ";\n"; 
+                ari = ari->sig;
+            }
+        }
+        // sino solo imprimimos el vertice
+        else
+        {
+            texto += "\t";
+            texto += punt->nombre;
+            texto += ";\n";
+        }
+        punt = punt->sig;
+    }
+
+    // retornamos las instrucciones
+    return texto;
+}
+
+void graficarGrafo()
+{
+    // creamos un archivo
+    ofstream archivo;
+    archivo.open("grap.txt",ios::out);
+
+    // si falla
+    if(archivo.fail())
+    {
+        cout<<"Ocurrio un error";
+        exit(1);
+    }
+
+    // sino creamos con las instrucciones
+    archivo<<"graph A {\n"
+    <<instruccionGrafo()
+    <<"}";
+
+    // lo creamos en formato pdf
+    archivo.close();
+    system("dot -Tpdf grap.txt -o grap.pdf");
+}
+
+void abrirPdf()
+{
+    // abrimos el pdf
+    system("d:");
+    system(direccion);
+    system("grap.pdf");
+}
+
+// para leer los espacios de columna a columna de la matriz del archivo
+int funcionInternos(int n)
+{
+    int cantNum = 0;
+    for(int i = 0; i < n; i++)
+    {
+        if(i % 2 == 0)
+            cantNum++;
+    }
+    return cantNum;
+}
+
+void datosMatriz(string nombreArchivo, int &fi, int &co)
+{
+    // dinamicamente averiguamos cuales son el numero de filas y columnas
+    ifstream archivo;
+    string texto, linea;
+
+    archivo.open(nombreArchivo);
+
+    int filas = 0, column;
+    while(getline(archivo,linea))
+    {
+        column = linea.length();
+        filas++;
+    }
+    column = funcionInternos(column);
+
+    archivo.close();
+    
+    fi = filas;
+    co = column;
+}
+
+void cargarMatriz(string nombreArchivo, int fi, int co)
+{
+    //reservamos memoria en un puntero
+    puntero_matriz = new int*[fi];
+    for(int i = 0; i < fi; i++)
+        puntero_matriz[i] = new int[co];
+
+    ifstream archivo;
+    archivo.open(nombreArchivo);
+
+    // comenzamo a guardar los datos del archivo en una matriz dinamica
+    for(int i = 0; i < fi; i++)
+        for(int  j = 0; j < co; j++)
+            archivo>>*(*(puntero_matriz+i)+j);
+
+    archivo.close();
+}
+
+void mostrarMatriz(int fi, int co)
+{
+    // mostrar los datos de la matriza
+    for(int i = 0; i < fi; i++)
+    {
+        for(int j = 0; j < co; j++)
+            cout<<*(*(puntero_matriz+i)+j)<<" ";
+        cout<<endl;
+    }
+    cout<<endl;
+}
+
+// como es una matriz de incidencia, las aristas se forman por columnas
+void porColumna(int fi, int nColumn)
+{
+    // se crea un arreglo con las posiciones de los vertices
+    int N[2] = {-1,-1}, w = 0;
+    for(int i = 0; i < fi; i++)
+    {
+        if(*(*(puntero_matriz+i)+nColumn) == 1)
+        {
+            // solo si hay un uno, el valor cambia a la posicion
+            N[w] = i;
+            w++;
+        }
+    }
+
+    if(N[1] == -1) // si el segundo punto sigue siendo -1, entonces es un lazo
+        N[1] = N[0];
+
+    char n1 = letraAscii(N[0] + 65), // les asignamos letras
+    n2 = letraAscii(N[1] + 65);
+
+    // insertamos arista de n1 a n2
+    insertarArista(n1,n2);
+
+}
+
+// se crea el grafo en si
+void grafoFichero(string nombreArchivo, int fi, int co)
+{
+    // el numero de vertices son las filas y las columnas las aristas
+    int nVertices = fi, nAristas = co, i = 65;
+    
+    // cargamos la matriz y lo mostramos
+    cargarMatriz(nombreArchivo,fi,co);
+    cout<<"Mostrando la matriz: "<<endl;
+    mostrarMatriz(fi,co);
+
+    // inserto los vertices por cada fila
+    while(i < nVertices + 65)
+    {
+        insertarVertice(letraAscii(i));
+        i++;
+    }
+
+
+    // y por columna insertamos la aritas
+    for(int i = 0; i < co; i++)
+        porColumna(fi,i);
+
+}
+
