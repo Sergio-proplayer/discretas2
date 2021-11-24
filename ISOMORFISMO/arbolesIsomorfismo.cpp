@@ -10,7 +10,8 @@ struct nodo{
     struct nodo *izq, *der;
 };
 
-const char *direccion = "cd UNSA 2DO SEMESTRE\\ESTRUCTURAS DISCRETAS II\\ArchivosCPP\\ISOMORFISMO";
+const char *direccion = "cd UNSA 2DO SEMESTRE\\ESTRUCTURAS DISCRETAS II\\ArchivosCPP\\ISOMORFISMO",
+            *disco = "d:";
 
 bool existe(int, int [], int);
 nodo *crearNodo(int);
@@ -141,7 +142,7 @@ void graficarGrafo(string texto)
 void abrirPdf()
 {
     // abrimos el pdf
-    system("d:");
+    system(disco);
     system(direccion);
     system("isomorfismo.pdf");
 }
