@@ -1,11 +1,25 @@
 graph A {
-	A -- D;
-	A -- D;
 	A -- B;
+	B -- C;
 	B -- D;
-	B -- E;
-	B -- B;
-	C -- E;
-	D;
-	E;
+	C;
+	D -- E;
+	D -- J;
+	E -- F;
+	E -- G;
+	F;
+	G -- H;
+	G -- I;
+	H;
+	I;
+	J -- K;
+	J -- L;
+	K;
+	L -- M;
+	L -- N;
+	M;
+	N -- O;
+	N -- P;
+	O;
+	P;
 }

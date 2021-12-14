@@ -1,0 +1,25 @@
+graph A {
+	A -- B[label = 3];
+	B -- C[label = 2];
+	B -- D[label = 5];
+	C;
+	D -- E[label = 1];
+	D -- J[label = 2];
+	E -- F[label = 2];
+	E -- G[label = 1];
+	F;
+	G -- H[label = 2];
+	G -- I[label = 6];
+	H;
+	I;
+	J -- K[label = 3];
+	J -- L[label = 1];
+	K;
+	L -- M[label = 1];
+	L -- N[label = 1];
+	M;
+	N -- O[label = 2];
+	N -- P[label = 3];
+	O;
+	P;
+}
