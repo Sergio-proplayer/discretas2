@@ -4,17 +4,19 @@
 #include<vector>
 using namespace std;
 
-
 // datos a cambiar de ser necesario
 const char *direccion = "cd UNSA 2DO SEMESTRE\\ESTRUCTURAS DISCRETAS II\\ArchivosCPP\\PROYECTO";
 const string archivoMatriz = "matrizT.txt";
 
 // matriz dinamica para guardar datos en caso de leer un archivp
 int **puntero_matriz;
+// filas y columnas de la matriz dinamica
+int fi, co;
 
 // matriz para alamacenar los datos de las aristas
 int **aristas;
 char **aristas_camino_clave;
+
 
 // las estructuras para la arita y el vertice
 struct Arista;
@@ -32,10 +34,9 @@ struct Arista{
 };
 
 // el vertice principal o el primero, al que llamaremos grafo
-Vertice *grafo = NULL;
+Vertice *arbol = NULL;
 
 // prototipos de funciones
-void menu();
 char letraAscii(int);
 int numeroAscii(char);
 void insertarVertice(char);
@@ -45,106 +46,55 @@ string instruccionGrafo();
 void graficarGrafo(string);
 void abrirPdf();
 int funcionInternos(int);
-void datosMatriz(string, int &, int &);
-void cargarMatriz(string, int, int);
-void mostrarMatriz(int, int);
-void porColumna(int, int);
-void grafoFichero(string, int, int);
+void datosMatriz(string);
+void cargarMatriz(string);
+void mostrarMatriz();
+void porColumna(int);
+void grafoFichero(string);
 
 bool esHoja(Vertice *);
-void conjuntoFinales(Vertice *,vector<char>&);
-void getAristas(Vertice *,int);
-int hallarCaminos(char,int);
-void hallarCaminoClave(int, vector<char>, vector<int>&, char &);
-
-int cantVertices(char,int);
-void construirCamino(char,int);
-string instruccionGrafoCaminoClave(char, int);
+void conjuntoFinales(vector<char>&);
+void getAristas();
+int hallarCaminos(char);
+void hallarCaminoClave(vector<char>, vector<int>&, char &);
+int cantVertices(char);
+void construirCamino(char);
+string instruccionGrafoCaminoClave(char);
 
 int main()
 {
-    char opc;
-    int fi, co;
     vector<char> hojas;
     vector<int> caminos;
     char hojaFinal;
 
-    do
-    {
-        menu();
-        cout<<"Digite una opcion ";cin>>opc;
-        switch (opc)
-        {
-            
-            case '1': { // Cargar el archivo
-                    // y creamos un grafo a partir de los datos de la matriz
-                datosMatriz(archivoMatriz,fi,co);
-                cout<<endl;
-                grafoFichero(archivoMatriz,fi,co);
-                system("pause");
-            }break;
-            case '2': { // graficar, mostrarlo en el pdf
-                string instrucciones = instruccionGrafo();
-                graficarGrafo(instrucciones);
-                abrirPdf();
-            }break;
-            case '3' :{
-                conjuntoFinales(grafo,hojas);
-                for(auto i = hojas.begin(); i != hojas.end(); i++)
-                    cout<<*i<<" ";
-                system("pause");
-            }break;
-            case '4':{
-                getAristas(grafo,co);
-                for(int i = 0; i < co; i++)
-                {   
-                    for(int j = 0; j < 3; j++)
-                        cout<<*(*(aristas+i)+j)<<" ";
-                    cout<<endl;
-                }
-                system("pause");
-            }break;
-            case '5':{
-                hallarCaminoClave(co,hojas,caminos,hojaFinal);
-                for(auto i = caminos.begin(); i != caminos.end(); i++)
-                    cout<<*i<<" ";
-                system("pause");
-            }break;
-            case '6':{
-                string segundaInstruccion = instruccionGrafoCaminoClave(hojaFinal,co);
-                graficarGrafo(segundaInstruccion);
-                abrirPdf();
-                system("pause");
-            }break;
-            case '7': {
-                cout<<"Saliendo...";
-                system("pause");
-            }break;
-            default: {
-                cout<<"No es una opcion"<<endl;
-                system("pause");
-            }break;
-        }
-        system("cls");
-    } while (opc != '7');
+    datosMatriz(archivoMatriz);
+    grafoFichero(archivoMatriz);
+    string instrucciones  = instruccionGrafo();
+    graficarGrafo(instrucciones);
+    abrirPdf();
+    
+    conjuntoFinales(hojas);
+    getAristas();
+    hallarCaminoClave(hojas,caminos,hojaFinal);
+    string segundaInstruccion = instruccionGrafoCaminoClave(hojaFinal);
+    system("cls");
+    graficarGrafo(segundaInstruccion);
+    abrirPdf();
 
-    for(int i=0;i<fi;i++)
-	{
+    for(int i = 0; i < fi; i++)
 		delete [] puntero_matriz[i];
-	}
 	delete [] puntero_matriz;
-    return 0;
-}
 
-void menu()
-{
-    cout<<"1. Cargar archivo"<<endl;
-    cout<<"2. Mostrar Grafo"<<endl;
-    cout<<"3. Mostrar hojas"<<endl;
-    cout<<"4. Mostrar matriz de aristas"<<endl;
-    cout<<"5. Mostrar pesos"<<endl;
-    cout<<"6. Mostrar camino clave"<<endl;
-    cout<<"7. Salir"<<endl;
+    for(int i = 0; i < cantVertices(hojaFinal); i++)
+        delete [] aristas_camino_clave[i];
+    delete [] aristas_camino_clave;
+
+    for(int i = 0; i < co; i++)
+        delete [] aristas[i];
+    delete [] aristas;
+
+    
+    return 0;
 }
 
 void insertarVertice(char nombre)
@@ -156,16 +106,16 @@ void insertarVertice(char nombre)
     nuevo->ady = NULL;
 
     // si el grafo es null, el vertice es el grafo
-    if(grafo == NULL)
-        grafo = nuevo;
+    if(arbol == NULL)
+        arbol = nuevo;
     else{
-        aux = grafo;
+        aux = arbol;
         // si no lo insertamos al inicio
         while(aux->sig != NULL)
             aux = aux->sig;
         aux->sig = nuevo;
     }
-    cout<<nuevo->nombre<<" Ingresado al grafo "<<endl;
+   // cout<<nuevo->nombre<<" Ingresado al grafo "<<endl;
 
 }
 
@@ -196,15 +146,15 @@ void insertarArista(char orig, char dest, int peso)
     Vertice *aux1, *aux2;
 
     // si el grafo es null, no hay donde insertar aritas
-    if(grafo == NULL)
+    if(arbol == NULL)
     {
         cout<<"No hay grafo"<<endl;
         return;
     }
     nueva_arista->sig = NULL;
     nueva_arista->peso = peso;
-    aux1 = grafo;
-    aux2 = grafo;
+    aux1 = arbol;
+    aux2 = arbol;
 
     // recorremos el grafo hasta tomar el valor de destino
     while(aux2 != NULL)
@@ -245,7 +195,7 @@ string instruccionGrafo()
 {
     Vertice *punt;
     Arista *ari;
-    punt = grafo;
+    punt = arbol;
 
     string texto;
 
@@ -326,7 +276,7 @@ int funcionInternos(int n)
     return cantNum;
 }
 
-void datosMatriz(string nombreArchivo, int &fi, int &co)
+void datosMatriz(string nombreArchivo)
 {
     // dinamicamente averiguamos cuales son el numero de filas y columnas
     ifstream archivo;
@@ -348,7 +298,7 @@ void datosMatriz(string nombreArchivo, int &fi, int &co)
     co = column;
 }
 
-void cargarMatriz(string nombreArchivo, int fi, int co)
+void cargarMatriz(string nombreArchivo)
 {
     //reservamos memoria en un puntero
     puntero_matriz = new int*[fi];
@@ -366,7 +316,7 @@ void cargarMatriz(string nombreArchivo, int fi, int co)
     archivo.close();
 }
 
-void mostrarMatriz(int fi, int co)
+void mostrarMatriz()
 {
     // mostrar los datos de la matriza
     for(int i = 0; i < fi; i++)
@@ -379,7 +329,7 @@ void mostrarMatriz(int fi, int co)
 }
 
 // como es una matriz de incidencia, las aristas se forman por columnas
-void porColumna(int fi, int nColumn)
+void porColumna(int nColumn)
 {
     // se crea un arreglo con las posiciones de los vertices
     int N[2] = {-1,-1}, w = 0, peso;
@@ -406,15 +356,15 @@ void porColumna(int fi, int nColumn)
 }
 
 // se crea el grafo en si
-void grafoFichero(string nombreArchivo, int fi, int co)
+void grafoFichero(string nombreArchivo)
 {
     // el numero de vertices son las filas y las columnas las aristas
     int nVertices = fi, nAristas = co, i = 65;
     
     // cargamos la matriz y lo mostramos
-    cargarMatriz(nombreArchivo,fi,co);
-    cout<<"Mostrando la matriz: "<<endl;
-    mostrarMatriz(fi,co);
+    cargarMatriz(nombreArchivo);
+ //   cout<<"Mostrando la matriz: "<<endl;
+ //   mostrarMatriz();
 
     // inserto los vertices por cada fila
     while(i < nVertices + 65)
@@ -426,7 +376,7 @@ void grafoFichero(string nombreArchivo, int fi, int co)
 
     // y por columna insertamos la aritas
     for(int i = 0; i < co; i++)
-        porColumna(fi,i);
+        porColumna(i);
 
 }
 
@@ -438,7 +388,7 @@ bool esHoja(Vertice *vert)
     return false;
 }
 
-void conjuntoFinales(Vertice *arbol, vector<char> &hojas)
+void conjuntoFinales(vector<char> &hojas)
 {
     Vertice *aux = arbol;
     while(aux != NULL)
@@ -449,7 +399,7 @@ void conjuntoFinales(Vertice *arbol, vector<char> &hojas)
     }
 }
 
-void getAristas(Vertice *arbol, int co)
+void getAristas()
 {
     aristas = new int*[co];
     for(int i = 0; i < co; i++)
@@ -473,7 +423,7 @@ void getAristas(Vertice *arbol, int co)
     }
 }
 
-int hallarCaminos(char l, int co)
+int hallarCaminos(char l)
 {
     char orig, dest = l;
     int peso = 0;
@@ -492,10 +442,10 @@ int hallarCaminos(char l, int co)
     return peso;
 }
 
-void hallarCaminoClave(int co, vector<char> hojas, vector<int> & caminos, char & hojaFinal)
+void hallarCaminoClave(vector<char> hojas, vector<int> & caminos, char & hojaFinal)
 {   
     for(auto i = hojas.begin(); i != hojas.end(); i++)
-        caminos.push_back(hallarCaminos(*i,co));
+        caminos.push_back(hallarCaminos(*i));
 
     int mayor = 0, j = 0;
     for(auto i = caminos.begin(); i != caminos.end(); i++, j++)
@@ -507,7 +457,7 @@ void hallarCaminoClave(int co, vector<char> hojas, vector<int> & caminos, char &
 
 }
 
-int cantVertices(char l, int co)
+int cantVertices(char l)
 {
     char orig, dest = l;
     int cantVert = 0;
@@ -527,9 +477,9 @@ int cantVertices(char l, int co)
 }
 
 
-void construirCamino(char l, int co)
+void construirCamino(char l)
 {
-    int cantVert = cantVertices(l,co);
+    int cantVert = cantVertices(l);
     aristas_camino_clave = new char*[cantVert];
     for(int i = 0; i < cantVert; i++)
         aristas_camino_clave[i] = new char[2];
@@ -554,13 +504,13 @@ void construirCamino(char l, int co)
 }
 
 
-string instruccionGrafoCaminoClave(char hojaFinal, int co)
+string instruccionGrafoCaminoClave(char hojaFinal)
 {
-    construirCamino(hojaFinal,co);
+    construirCamino(hojaFinal);
 
     Vertice *punt;
     Arista *ari;
-    punt = grafo;
+    punt = arbol;
 
     string texto;
 
@@ -580,7 +530,7 @@ string instruccionGrafoCaminoClave(char hojaFinal, int co)
                 texto += "[label = ";
                 texto += to_string(ari->peso);
                 texto += "]";
-                for(int i = 0; i < cantVertices(hojaFinal,co); i++)
+                for(int i = 0; i < cantVertices(hojaFinal); i++)
                 {   
                     cout<<punt->nombre<<" = "<<*(*(aristas_camino_clave+i)+0)<<" / "<<ari->dest->nombre<<" = "<<*(*(aristas_camino_clave+i)+1)<<endl;
                     if(punt->nombre ==  *(*(aristas_camino_clave+i)+0) && ari->dest->nombre == *(*(aristas_camino_clave+i)+1))

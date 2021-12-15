@@ -1,15 +1,15 @@
 graph A {
-	A -- B[label = 3];
+	A -- B[label = 3][color = "red"];
 	B -- C[label = 2];
-	B -- D[label = 5];
+	B -- D[label = 5][color = "red"];
 	C;
-	D -- E[label = 1];
+	D -- E[label = 1][color = "red"];
 	D -- J[label = 2];
 	E -- F[label = 2];
-	E -- G[label = 1];
+	E -- G[label = 1][color = "red"];
 	F;
 	G -- H[label = 2];
-	G -- I[label = 6];
+	G -- I[label = 6][color = "red"];
 	H;
 	I;
 	J -- K[label = 3];
