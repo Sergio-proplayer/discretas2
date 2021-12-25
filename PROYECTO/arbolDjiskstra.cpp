@@ -62,6 +62,14 @@ int cantVertices(int);
 void construirCamino(int);
 string instruccionGrafoCaminoClave(int);
 
+bool esHijo(int);
+int posColumna(int , bool []);
+bool columnasTomadas(bool []);
+
+void unirNodos(int &, bool [], vector<int> &);
+
+int cantHijos(int,bool []);
+
 int main()
 {
     vector<int> hojas;
@@ -75,22 +83,26 @@ int main()
     
     string instrucciones  = instruccionGrafo();
     graficarGrafo(instrucciones);
+    system("cls");
     abrirPdf();
     
     conjuntoFinales(hojas);
-    //getAristas();
+    getAristas();
     
-    //hallarCaminoClave(hojas,caminos,hojaFinal);
-    /*
+    hallarCaminoClave(hojas,caminos,hojaFinal);
+    cout<<"Hoja final: "<<hojaFinal<<endl;
+    cout<<cantVertices(hojaFinal)<<endl;
+    
     string segundaInstruccion = instruccionGrafoCaminoClave(hojaFinal);
     system("cls");
     graficarGrafo(segundaInstruccion);
     abrirPdf();
-    */
+    
     
     for(auto i = hojas.begin(); i != hojas.end(); i++)
         cout<<*i<<" ";
-    cout<<endl;/*
+    cout<<endl;
+    system("cls");
     
     for(int i = 0; i < co; i++)
     {
@@ -98,11 +110,12 @@ int main()
             cout<<aristas[i][j]<<" ";
         cout<<endl;
     } 
-*/
+    system("cls");
+
     for(int i = 0; i < fi; i++)
 		delete [] puntero_matriz[i];
 	delete [] puntero_matriz;
-/*
+    
     for(int i = 0; i < cantVertices(hojaFinal); i++)
         delete [] aristas_camino_clave[i];
     delete [] aristas_camino_clave;
@@ -110,7 +123,7 @@ int main()
     for(int i = 0; i < co; i++)
         delete [] aristas[i];
     delete [] aristas;
-*/
+
     Vertice *aux;
     Arista *ari;
     while(arbol != NULL)
@@ -269,7 +282,7 @@ void graficarGrafo(string instrucciones)
     }
 
     // sino creamos con las instrucciones
-    archivo<<"graph A {\n"
+    archivo<<"graph A {\n rankdir=\"LR\";\n"
     <<instrucciones
     <<"}";
 
@@ -346,25 +359,7 @@ void mostrarMatriz()
 // como es una matriz de incidencia, las aristas se forman por columnas
 void porColumna(int nColumn)
 {
-    // se crea un arreglo con las posiciones de los vertices
-    int N[2] = {-1,-1}, w = 0;
-    float peso;
-    for(int i = 0; i < fi; i++)
-    {
-        if(*(*(puntero_matriz+i)+nColumn) > 0)
-        {
-            peso = *(*(puntero_matriz+i)+nColumn);
-            // solo si hay un uno, el valor cambia a la posicion
-            N[w] = i;
-            w++;
-        }
-    }
 
-    if(N[1] == -1) // si el segundo punto sigue siendo -1, entonces es un lazo
-        N[1] = N[0];
-
-    // insertamos arista de n1 a n2
-    insertarArista(N[0]+1,N[1]+1,peso);
 
 }
 
@@ -386,15 +381,83 @@ void grafoFichero(string nombreArchivo)
         i++;
     }
 
-
-    // y por columna insertamos la aritas
+    bool columnas[co];
     for(int i = 0; i < co; i++)
+        columnas[i] = false;
+
+    int posNodo = 0; // comenzamos con el primer nodo
+    vector<int> anteriores;
+    while(columnasTomadas(columnas) == false)
     {
-        porColumna(i);
-    }
-        
+        unirNodos(posNodo,columnas,anteriores);
+    }    
 
 }
+
+// posNodo = la fila donde se encuentra el nodo
+void unirNodos(int &  posNodo, bool columnas[], vector<int> & anteriores)
+{
+    // la columna donde se encuentra el nodo
+    int column = posColumna(posNodo,columnas);
+    //cout<<"Nodo:"<<posNodo+1<<" "<<column<<endl;    
+    if(column != -1)
+    {
+        columnas[column] = true;
+        int peso, sigNodo;
+        for(int i = 0; i < fi; i++)
+            if(puntero_matriz[i][column] > 0 && i != posNodo)
+            {
+                peso = puntero_matriz[i][column];
+                sigNodo = i;
+            }
+        cout<<posNodo+1<<" "<<sigNodo+1<<endl;
+        insertarArista(posNodo+1,sigNodo+1,peso);
+        anteriores.push_back(posNodo);
+        
+        cout<<"Ant: ";
+        for(auto i = anteriores.begin(); i != anteriores.end(); i++)
+            cout<<*i+1<<" ";
+        cout<<endl;
+        posNodo = sigNodo;
+    }
+    else{
+        
+        int lenght = anteriores.size();
+        while(lenght > 0){
+            int val = anteriores[lenght-1];
+            if(cantHijos(val,columnas) >= 1)
+            {
+                cout<<"Y: "<<val<<" "<<cantHijos(val,columnas)<<endl;
+                posNodo = val;
+                cout<<"A: "<<posNodo+1<<endl;
+            }
+            //anteriores.pop_back();
+            lenght--;
+        }
+    }
+}
+
+// retorna la columna en la que se encuentra el nodo
+int posColumna(int fila, bool columnas[])
+{
+    for(int i = 0; i < co; i++)
+    {
+        if(columnas[i] == false && puntero_matriz[fila][i] > 0)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+bool columnasTomadas(bool columnas[])
+{
+    for(int i = 0; i < co; i++)
+        if(columnas[i] == false)
+            return false;
+    return true;
+}
+
 
 bool esHoja(Vertice *vert)
 {
@@ -443,7 +506,7 @@ float hallarCaminos(int l)
 {
     int orig, dest = l;
     float peso = 0;
-    while(orig != 'A')
+    while(orig != 1)
     {
         for(int i = 0; i < co; i++)
         {
@@ -455,6 +518,7 @@ float hallarCaminos(int l)
         }
         dest = orig;
     }
+    
     return peso;
 }
 
@@ -478,7 +542,7 @@ int cantVertices(int l)
 {
     int orig, dest = l;
     int cantVert = 0;
-    while(orig != 'A')
+    while(orig != 1)
     {
         for(int i = 0; i < co; i++)
         {
@@ -503,7 +567,7 @@ void construirCamino(int l)
 
     int orig, dest = l;
     int j = 0;
-    while(orig != 'A')
+    while(orig != 1)
     {
         for(int i = 0; i < co; i++)
         {
@@ -541,12 +605,9 @@ string instruccionGrafoCaminoClave(int hojaFinal)
             while(ari != NULL)
             {
                 texto += "\t";
-                stringstream ss1;
-                ss1<<punt->nombre;
-                string str1 = ss1.str();
-                texto += str1;
+                texto += to_string(punt->nombre);
                 texto += " -- ";
-                texto += ari->dest->nombre;
+                texto += to_string(ari->dest->nombre);
                 texto += "[label = ";
                 stringstream ss;
                 ss<<ari->peso;
@@ -559,7 +620,7 @@ string instruccionGrafoCaminoClave(int hojaFinal)
                     if(punt->nombre ==  *(*(aristas_camino_clave+i)+0) && ari->dest->nombre == *(*(aristas_camino_clave+i)+1))
                     {
                         texto += "[color = \"red\"]";
-                       // cout<<punt->nombre<<" "<<ari->dest->nombre<<endl;
+                        //cout<<punt->nombre<<" "<<ari->dest->nombre<<endl;
 
                     }
                 }
@@ -571,10 +632,7 @@ string instruccionGrafoCaminoClave(int hojaFinal)
         else
         {
             texto += "\t";
-            stringstream ss1;
-            ss1<<punt->nombre;
-            string str1 = ss1.str();
-            texto += str1;
+            texto += to_string(punt->nombre);
             texto += ";\n";
         }
         punt = punt->sig;
@@ -585,3 +643,34 @@ string instruccionGrafoCaminoClave(int hojaFinal)
 }
 
 
+
+bool esHijo(int n)
+{
+    int count = 0;
+    for(int i = 0; i < co; i++)
+    {
+        if(puntero_matriz[n][i] > 0)
+        {
+            count++;
+        }
+    }
+    if(count > 1)
+        return false;
+    else
+        return true;
+}
+
+
+
+int cantHijos(int n, bool columnas[])
+{
+    int count = 0;
+    for(int i = 0; i < co; i++)
+    {
+        if(columnas[i] == false && puntero_matriz[n][i] > 0)
+        {
+            count++;
+        }
+    }   
+    return count;
+}
