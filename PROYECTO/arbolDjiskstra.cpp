@@ -17,6 +17,7 @@ int fi, co;
 
 // matriz para alamacenar los datos de las aristas
 float **aristas;
+// las aristas del camino clave encontrado
 int **aristas_camino_clave;
 
 
@@ -50,7 +51,6 @@ int funcionInternos(int);
 void datosMatriz(string);
 void cargarMatriz(string);
 void mostrarMatriz();
-void porColumna(int);
 void grafoFichero(string);
 
 bool esHoja(Vertice *);
@@ -62,56 +62,48 @@ int cantVertices(int);
 void construirCamino(int);
 string instruccionGrafoCaminoClave(int);
 
-bool esHijo(int);
 int posColumna(int , bool []);
 bool columnasTomadas(bool []);
-
 void unirNodos(int &, bool [], vector<int> &);
-
 int cantHijos(int,bool []);
 
 int main()
 {
+    // vector para guardar los nodos finales u hojas
     vector<int> hojas;
+    // vector para guardar el peso acumulado desde el nodo inicial hacia las hojas
     vector<float> caminos;
+    // hojas final a encontrar
     int hojaFinal;
 
+    // sumamos cuantas filas y columnas tiene la matriz
     datosMatriz(archivoMatriz);
-    cout<<fi<<co<<endl;
+    // usando los datos de la matriz formamos el arbol o grafo
     grafoFichero(archivoMatriz);
     //mostrarMatriz();
     
+    // usando el arbol, generamos unas instrucciones para graficar en graphviz
     string instrucciones  = instruccionGrafo();
     graficarGrafo(instrucciones);
     system("cls");
     abrirPdf();
-    
+
+    // en el vector hojas, almacenamos los nodos finales    
     conjuntoFinales(hojas);
+    // tomamos los pares de las aristas en un arreglo
     getAristas();
-    
+
+    // tomando en cuenta las hojas, y los caminos, llegamos a saber cual es la hoja final    
     hallarCaminoClave(hojas,caminos,hojaFinal);
-    cout<<"Hoja final: "<<hojaFinal<<endl;
     cout<<cantVertices(hojaFinal)<<endl;
     
+    // utilizando la hoja final, generamos una segunda instruccion, resaltando el camino clave
     string segundaInstruccion = instruccionGrafoCaminoClave(hojaFinal);
     system("cls");
     graficarGrafo(segundaInstruccion);
     abrirPdf();
-    
-    
-    for(auto i = hojas.begin(); i != hojas.end(); i++)
-        cout<<*i<<" ";
-    cout<<endl;
-    system("cls");
-    
-    for(int i = 0; i < co; i++)
-    {
-        for(int j = 0; j < 3; j++) 
-            cout<<aristas[i][j]<<" ";
-        cout<<endl;
-    } 
-    system("cls");
 
+    // liberamos memoria
     for(int i = 0; i < fi; i++)
 		delete [] puntero_matriz[i];
 	delete [] puntero_matriz;
@@ -140,6 +132,60 @@ int main()
     }
 
     return 0;
+}
+
+void datosMatriz(string nombreArchivo)
+{
+    // dinamicamente averiguamos cuales son el numero de filas y columnas
+    ifstream archivo;
+    string texto, linea;
+
+    archivo.open(nombreArchivo);
+
+    int filas = 0, column = 0;
+    while(getline(archivo,linea))
+    {
+        for(int i = 0; i < linea.length(); i++)
+            if(linea[i] == '\t') // cada tabulacion es una columna
+                column++;
+        filas++;
+    }
+
+    column /= filas; 
+    archivo.close();
+    
+    fi = filas;
+    co = column;
+}
+
+void cargarMatriz(string nombreArchivo)
+{
+    //reservamos memoria en un puntero
+    puntero_matriz = new float*[fi];
+    for(int i = 0; i < fi; i++)
+        puntero_matriz[i] = new float[co];
+
+    ifstream archivo;
+    archivo.open(nombreArchivo);
+
+    // comenzamo a guardar los datos del archivo en una matriz dinamica
+    for(int i = 0; i < fi; i++)
+        for(int  j = 0; j < co; j++)
+            archivo>>*(*(puntero_matriz+i)+j);
+
+    archivo.close();
+}
+
+void mostrarMatriz()
+{
+    // mostrar los datos de la matriza
+    for(int i = 0; i < fi; i++)
+    {
+        for(int j = 0; j < co; j++)
+            cout<<*(*(puntero_matriz+i)+j)<<" ";
+        cout<<endl;
+    }
+    cout<<endl;
 }
 
 void insertarVertice(int nombre)
@@ -282,7 +328,7 @@ void graficarGrafo(string instrucciones)
     }
 
     // sino creamos con las instrucciones
-    archivo<<"graph A {\n rankdir=\"LR\";\n"
+    archivo<<"graph A {\n"
     <<instrucciones
     <<"}";
 
@@ -299,70 +345,6 @@ void abrirPdf()
     system("arbol.pdf");
 }
 
-void datosMatriz(string nombreArchivo)
-{
-    // dinamicamente averiguamos cuales son el numero de filas y columnas
-    ifstream archivo;
-    string texto, linea;
-
-    archivo.open(nombreArchivo);
-
-    int filas = 0, column = 0;
-    while(getline(archivo,linea))
-    {
-        for(int i = 0; i < linea.length(); i++)
-            if(linea[i] == '\t')
-                column++;
-        filas++;
-    }
-    //column = funcionInternos(column);
-
-    cout<<column<<endl;
-
-    column /= filas;
-    archivo.close();
-    
-    fi = filas;
-    co = column;
-}
-
-void cargarMatriz(string nombreArchivo)
-{
-    //reservamos memoria en un puntero
-    puntero_matriz = new float*[fi];
-    for(int i = 0; i < fi; i++)
-        puntero_matriz[i] = new float[co];
-
-    ifstream archivo;
-    archivo.open(nombreArchivo);
-
-    // comenzamo a guardar los datos del archivo en una matriz dinamica
-    for(int i = 0; i < fi; i++)
-        for(int  j = 0; j < co; j++)
-            archivo>>*(*(puntero_matriz+i)+j);
-
-    archivo.close();
-}
-
-void mostrarMatriz()
-{
-    // mostrar los datos de la matriza
-    for(int i = 0; i < fi; i++)
-    {
-        for(int j = 0; j < co; j++)
-            cout<<*(*(puntero_matriz+i)+j)<<" ";
-        cout<<endl;
-    }
-    cout<<endl;
-}
-
-// como es una matriz de incidencia, las aristas se forman por columnas
-void porColumna(int nColumn)
-{
-
-
-}
-
 // se crea el grafo en si
 void grafoFichero(string nombreArchivo)
 {
@@ -371,9 +353,6 @@ void grafoFichero(string nombreArchivo)
     
     // cargamos la matriz y lo mostramos
     cargarMatriz(nombreArchivo);
- //   cout<<"Mostrando la matriz: "<<endl;
- //   mostrarMatriz();
-
     // inserto los vertices por cada fila
     while(i < nVertices)
     {
@@ -381,6 +360,7 @@ void grafoFichero(string nombreArchivo)
         i++;
     }
 
+    // vector de booleanos para contabilizar columnas tomadas
     bool columnas[co];
     for(int i = 0; i < co; i++)
         columnas[i] = false;
@@ -388,10 +368,7 @@ void grafoFichero(string nombreArchivo)
     int posNodo = 0; // comenzamos con el primer nodo
     vector<int> anteriores;
     while(columnasTomadas(columnas) == false)
-    {
         unirNodos(posNodo,columnas,anteriores);
-    }    
-
 }
 
 // posNodo = la fila donde se encuentra el nodo
@@ -399,57 +376,56 @@ void unirNodos(int &  posNodo, bool columnas[], vector<int> & anteriores)
 {
     // la columna donde se encuentra el nodo
     int column = posColumna(posNodo,columnas);
-    //cout<<"Nodo:"<<posNodo+1<<" "<<column<<endl;    
+
     if(column != -1)
     {
         columnas[column] = true;
-        int peso, sigNodo;
+        int sigNodo;
+        float peso;
+
         for(int i = 0; i < fi; i++)
             if(puntero_matriz[i][column] > 0 && i != posNodo)
             {
                 peso = puntero_matriz[i][column];
                 sigNodo = i;
             }
-        cout<<posNodo+1<<" "<<sigNodo+1<<endl;
+
         insertarArista(posNodo+1,sigNodo+1,peso);
         anteriores.push_back(posNodo);
-        
-        cout<<"Ant: ";
-        for(auto i = anteriores.begin(); i != anteriores.end(); i++)
-            cout<<*i+1<<" ";
-        cout<<endl;
         posNodo = sigNodo;
     }
     else{
-        
         int lenght = anteriores.size();
         while(lenght > 0){
             int val = anteriores[lenght-1];
-            if(cantHijos(val,columnas) >= 1)
-            {
-                cout<<"Y: "<<val<<" "<<cantHijos(val,columnas)<<endl;
+            if(cantHijos(val,columnas) > 0)
                 posNodo = val;
-                cout<<"A: "<<posNodo+1<<endl;
-            }
-            //anteriores.pop_back();
+
             lenght--;
         }
     }
 }
 
-// retorna la columna en la que se encuentra el nodo
+// cantidad de hijos que aun le queda al nodo
+int cantHijos(int n, bool columnas[])
+{
+    int count = 0;
+    for(int i = 0; i < co; i++)
+        if(columnas[i] == false && puntero_matriz[n][i] > 0)
+            count++;
+    return count;
+}
+
+// retorna la columna en la que el nodo tenga alguna arista
 int posColumna(int fila, bool columnas[])
 {
     for(int i = 0; i < co; i++)
-    {
         if(columnas[i] == false && puntero_matriz[fila][i] > 0)
-        {
             return i;
-        }
-    }
     return -1;
 }
 
+// si todas las columnas fueron tomadas o no
 bool columnasTomadas(bool columnas[])
 {
     for(int i = 0; i < co; i++)
@@ -458,7 +434,7 @@ bool columnasTomadas(bool columnas[])
     return true;
 }
 
-
+// si no tiene hijos, entonces es hoja
 bool esHoja(Vertice *vert)
 {
     Arista *ari = vert->ady;
@@ -467,6 +443,7 @@ bool esHoja(Vertice *vert)
     return false;
 }
 
+//  el vector que guarda los conjunto finales
 void conjuntoFinales(vector<int> &hojas)
 {
     Vertice *aux = arbol;
@@ -491,10 +468,10 @@ void getAristas()
     {
         ari = aux->ady;
         while(ari != NULL)
-        {
-            *(*(aristas+i)+0) = aux->nombre;
-            *(*(aristas+i)+1) = ari->dest->nombre;
-            *(*(aristas+i)+2) = ari->peso;
+        {   
+            *(*(aristas+i)+0) = aux->nombre; // padre
+            *(*(aristas+i)+1) = ari->dest->nombre; // hijo
+            *(*(aristas+i)+2) = ari->peso; // peso
             ari = ari->sig;
             i++; 
         }
@@ -506,17 +483,17 @@ float hallarCaminos(int l)
 {
     int orig, dest = l;
     float peso = 0;
-    while(orig != 1)
+    while(orig != 1) // el programa se ejecuta hasta llegar al primer nodo
     {
         for(int i = 0; i < co; i++)
         {
-            if(dest == *(*(aristas+i)+1))
+            if(dest == *(*(aristas+i)+1)) 
             {
                 orig = *(*(aristas+i)+0);
-                peso += *(*(aristas+i)+2);
+                peso += *(*(aristas+i)+2); // sumamos los pesos
             }
         }
-        dest = orig;
+        dest = orig; // el destino ahora es el origen
     }
     
     return peso;
@@ -525,19 +502,21 @@ float hallarCaminos(int l)
 void hallarCaminoClave(vector<int> hojas, vector<float> & caminos, int & hojaFinal)
 {   
     for(auto i = hojas.begin(); i != hojas.end(); i++)
-        caminos.push_back(hallarCaminos(*i));
+        caminos.push_back(hallarCaminos(*i)); // buscamos los pesos totales desde el punto inicial hasta cada nodo final
 
+    // buscamos el mayor
     float mayor = 0;
     int j = 0;
     for(auto i = caminos.begin(); i != caminos.end(); i++, j++)
         if(*i > mayor)
         {
             mayor = *i;
-            hojaFinal = hojas[j];
+            hojaFinal = hojas[j]; // la hoja final sera el camino de mayor peso
         }    
 
 }
 
+// cantidad de vertices del camino clave
 int cantVertices(int l)
 {
     int orig, dest = l;
@@ -557,7 +536,7 @@ int cantVertices(int l)
     return cantVert;
 }
 
-
+// construimos el camino clave, y lo guardamos en una matriz
 void construirCamino(int l)
 {
     int cantVert = cantVertices(l);
@@ -588,6 +567,7 @@ void construirCamino(int l)
 string instruccionGrafoCaminoClave(int hojaFinal)
 {
     construirCamino(hojaFinal);
+    int longitudCamino = cantVertices(hojaFinal);
 
     Vertice *punt;
     Arista *ari;
@@ -614,16 +594,9 @@ string instruccionGrafoCaminoClave(int hojaFinal)
                 string str = ss.str();
                 texto += str;
                 texto += "]";
-                for(int i = 0; i < cantVertices(hojaFinal); i++)
-                {   
-                    cout<<punt->nombre<<" = "<<*(*(aristas_camino_clave+i)+0)<<" / "<<ari->dest->nombre<<" = "<<*(*(aristas_camino_clave+i)+1)<<endl;
+                for(int i = 0; i < longitudCamino; i++)
                     if(punt->nombre ==  *(*(aristas_camino_clave+i)+0) && ari->dest->nombre == *(*(aristas_camino_clave+i)+1))
-                    {
                         texto += "[color = \"red\"]";
-                        //cout<<punt->nombre<<" "<<ari->dest->nombre<<endl;
-
-                    }
-                }
                 texto += ";\n"; 
                 ari = ari->sig;
             }
@@ -640,37 +613,4 @@ string instruccionGrafoCaminoClave(int hojaFinal)
 
     // retornamos las instrucciones
     return texto;
-}
-
-
-
-bool esHijo(int n)
-{
-    int count = 0;
-    for(int i = 0; i < co; i++)
-    {
-        if(puntero_matriz[n][i] > 0)
-        {
-            count++;
-        }
-    }
-    if(count > 1)
-        return false;
-    else
-        return true;
-}
-
-
-
-int cantHijos(int n, bool columnas[])
-{
-    int count = 0;
-    for(int i = 0; i < co; i++)
-    {
-        if(columnas[i] == false && puntero_matriz[n][i] > 0)
-        {
-            count++;
-        }
-    }   
-    return count;
 }
