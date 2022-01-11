@@ -67,6 +67,8 @@ bool columnasTomadas(bool []);
 void unirNodos(int &, bool [], vector<int> &);
 int cantHijos(int,bool []);
 
+void escribirRutaCritica(int);
+
 int main()
 {
     // vector para guardar los nodos finales u hojas
@@ -94,14 +96,15 @@ int main()
     getAristas();
 
     // tomando en cuenta las hojas, y los caminos, llegamos a saber cual es la hoja final    
+    cout<<hojaFinal<<"\t";
     hallarCaminoClave(hojas,caminos,hojaFinal);
-    cout<<cantVertices(hojaFinal)<<endl;
     
     // utilizando la hoja final, generamos una segunda instruccion, resaltando el camino clave
     string segundaInstruccion = instruccionGrafoCaminoClave(hojaFinal);
-    system("cls");
     graficarGrafo(segundaInstruccion);
     abrirPdf();
+
+    escribirRutaCritica(hojaFinal);
 
     // liberamos memoria
     for(int i = 0; i < fi; i++)
@@ -513,7 +516,7 @@ void hallarCaminoClave(vector<int> hojas, vector<float> & caminos, int & hojaFin
             mayor = *i;
             hojaFinal = hojas[j]; // la hoja final sera el camino de mayor peso
         }    
-
+    cout<<mayor<<endl;
 }
 
 // cantidad de vertices del camino clave
@@ -613,4 +616,28 @@ string instruccionGrafoCaminoClave(int hojaFinal)
 
     // retornamos las instrucciones
     return texto;
+}
+
+void escribirRutaCritica(int hojaFinal)
+{
+    vector<int> nodosRutaCritica;
+    int num = 1, lenght = cantVertices(hojaFinal);
+    while(num != hojaFinal)
+    {
+        nodosRutaCritica.push_back(num);
+        for(int i = 0; i < lenght; i++)
+        {
+            if(aristas_camino_clave[i][0] == num)
+            {
+                num = aristas_camino_clave[i][1];
+                break;
+            }
+        }
+    }
+    nodosRutaCritica.push_back(hojaFinal);
+    ofstream archivo;
+    archivo.open("rutaCritica.txt",ios::out);
+    for(auto i = nodosRutaCritica.begin(); i != nodosRutaCritica.end(); i++)   
+        archivo<<*i<<"\n";
+    archivo.close();
 }
